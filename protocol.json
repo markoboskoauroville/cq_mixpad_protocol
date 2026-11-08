@@ -58,14 +58,63 @@
       ]
     },
     "freq_hz": {
-      "formula": "Hz = 82.5 * 10^((raw - 0x4E9B) / 15316)",
-      "status": "two points only (82.5 Hz = 0x4E9B, 277 Hz = 0x6E12); needs calibration"
+      "formula": "Hz = 4 * 2^(raw / 4608)  (raw = 4608*log2(Hz/4): 18*256 per octave, 6*256 per third-octave)",
+      "used_by": [
+        "PEQ frequency (all 4 bands)",
+        "HPF frequency"
+      ],
+      "points": {
+        "10697": "20.0 Hz",
+        "15000": "38.2 Hz",
+        "20000": "81.0 Hz",
+        "21723": "105 Hz",
+        "24150": "151 Hz (HPF)",
+        "24576": "161 Hz",
+        "28178": "277 Hz (HPF)",
+        "30000": "365 Hz",
+        "36152": "920 Hz",
+        "37918": "1.20 kHz",
+        "40000": "1.64 kHz",
+        "44009": "3.00 kHz",
+        "48000": "5.47 kHz",
+        "52000": "9.98 kHz",
+        "56645": "20.1 kHz"
+      },
+      "error": "< 0.2 % at all 15 points",
+      "status": "calibrated 8.11.2026 (values sent to CQ MixPad only and read on its screen)",
+      "replaces": "the two-point Hz = 82.5*10^((raw-0x4E9B)/15316), which is the same line within 0.1 %"
     },
     "pan": {
       "range": "0x00 left, 0x25 centre, 0x4A right"
     },
-    "times": "logarithmic u16, not calibrated",
-    "ratio_and_width": "index, not calibrated",
+    "times": {
+      "formula": "microseconds = 2^(raw / 1793.44)  (raw 0 shows 0.00 us)",
+      "used_by": [
+        "gate attack (0D/10)",
+        "gate release (0D/11)",
+        "gate hold (0D/12)",
+        "comp attack (10/11)",
+        "comp release (10/12)"
+      ],
+      "points": {
+        "1": "1.00 us",
+        "256": "1.10 us",
+        "4000": "4.69 us",
+        "8000": "22.0 us",
+        "12966": "150 us",
+        "20000": "2.27 ms",
+        "24702": "14.0 ms",
+        "26000": "23.1 ms",
+        "30000": "108 ms",
+        "30840": "150 ms",
+        "31584": "200 ms",
+        "40000": "5.17 s",
+        "50000": "247 s",
+        "60000": "11766 s",
+        "65535": "99923 s"
+      },
+      "status": "calibrated 8.11.2026; one scale for all five times (MixPad clamps the knobs to a useful range, the protocol does not)"
+    },
     "krishna_das_target": {
       "what": "two Krishna Das references played into the CQ's USB channel and read on Main LR's own RTA, octave share of the whole (dB) 31..16k",
       "values": [
@@ -80,6 +129,105 @@
         -21.4,
         -30.8
       ]
+    },
+    "comp_ratio": {
+      "what": "index 0..40 (u16, low byte), 41+ shows blank",
+      "table": {
+        "0": "1",
+        "1": "1.03",
+        "2": "1.05",
+        "3": "1.07",
+        "4": "1.1",
+        "5": "1.15",
+        "6": "1.2",
+        "7": "1.25",
+        "8": "1.3",
+        "9": "1.35",
+        "10": "1.4",
+        "11": "1.5",
+        "12": "1.6",
+        "13": "1.7",
+        "14": "1.8",
+        "15": "1.9",
+        "16": "2",
+        "17": "2.3",
+        "18": "2.5",
+        "19": "2.7",
+        "20": "3",
+        "21": "3.3",
+        "22": "3.5",
+        "23": "3.7",
+        "24": "4",
+        "25": "4.3",
+        "26": "4.5",
+        "27": "4.7",
+        "28": "5",
+        "29": "5.3",
+        "30": "5.5",
+        "31": "5.7",
+        "32": "6",
+        "33": "7",
+        "34": "8",
+        "35": "10",
+        "36": "12",
+        "37": "16",
+        "38": "20",
+        "39": "40",
+        "40": "Infinity"
+      },
+      "unit": "n : 1",
+      "status": "all 41 indices read 8.11.2026"
+    },
+    "peq_width": {
+      "what": "index 0..25 (octaves); 26+ shows blank; 0 shows 'Shelf'",
+      "table": {
+        "0": "Shelf",
+        "1": "1.5",
+        "2": "1.4",
+        "3": "1.3",
+        "4": "1.2",
+        "5": "1.1",
+        "6": "1",
+        "7": "0.95",
+        "8": "0.9",
+        "9": "0.85",
+        "10": "0.8",
+        "11": "3/4",
+        "12": "0.7",
+        "13": "2/3",
+        "14": "0.6",
+        "15": "0.55",
+        "16": "0.5",
+        "17": "0.45",
+        "18": "0.4",
+        "19": "1/3",
+        "20": "0.3",
+        "21": "1/4",
+        "22": "0.2",
+        "23": "1/6",
+        "24": "0.13",
+        "25": "1/9"
+      },
+      "note": "a band switched to shelf/filter type keeps another number in this word (seen 1808, 2840)",
+      "status": "all 26 indices read 8.11.2026"
+    },
+    "gate_threshold_depth": {
+      "formula": "dB = (raw-0x8000)/256; raw 0 shows Off",
+      "points": {
+        "0x8000": "0.0",
+        "0x9000": "16.0",
+        "0x7000": "-16.0",
+        "0x7f00": "-1.0",
+        "0x8100": "1.0",
+        "0xA000": "32.0 (depth)",
+        "0x6200": "-30.0 (threshold)",
+        "0x9400": "20.0 (depth)"
+      },
+      "status": "confirmed 8.11.2026"
+    },
+    "comp_threshold_gain": {
+      "formula": "dB = (raw-0x8000)/256; raw 0 shows Off",
+      "status": "confirmed 8.11.2026 (0x7000 -16.0, 0x8400 +4.0)"
     }
   },
   "inputs": {
@@ -385,7 +533,17 @@
         "peq_gain_band_b": "520+280k+6b",
         "peq_freq_band_b": "522+280k+6b",
         "peq_width_band_b": "524+280k+6b",
-        "trim": "656+280k"
+        "trim": "656+280k",
+        "gate_attack": "488+280k",
+        "gate_hold": "492+280k",
+        "gate_threshold": "494+280k",
+        "gate_depth": "496+280k",
+        "comp_attack": "572+280k",
+        "comp_release": "574+280k",
+        "comp_threshold": "576+280k",
+        "comp_gain": "578+280k",
+        "comp_ratio_low_byte": "580+280k",
+        "stride_check": "all ten inputs decode to sane names, trims, HPF, PEQ, gate and comp values with stride 280 (8.11.2026)"
       },
       "analogue_gain": "31248+4k",
       "main_fader": "19916+168k (0x0000 = off)",
@@ -400,7 +558,6 @@
   "not_decoded": [
     "Main LR PEQ bands and compressor",
     "Out1-6 PEQ bands and GEQ",
-    "Ip2-Ip10 processing (same stride as Ip1, untested)",
     "ST IN / USB / Bluetooth processing",
     "FX inner PEQ and INPUTS/OUTPUTS tabs",
     "Gain Assistant Auto Set",
@@ -432,5 +589,9 @@
     },
     "note": "0x0A-0x1E carry no RTA",
     "verified": true
+  },
+  "calibration_method": {
+    "how": "cq_mitm.py injector line 'c <hex>' sends a message to CQ MixPad only, as if the desk reported it: MixPad shows the value, the desk is never changed (state dump diff = 0). MixPad runs in the Mantra Sandbox emulator (github.com/markoboskoauroville/MANTRA_SANDBOX), so no mouse or keyboard of the Mac is used.",
+    "date": "8.11.2026"
   }
 }

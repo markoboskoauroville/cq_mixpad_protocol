@@ -49,7 +49,7 @@ FX1 to LR = 0x20. Destinations (SS in block 06): Out1–6 = 08–0D, Main LR = 1
 ### Value scales
 dB values: (raw − 0x8000)/256 (trim, gate threshold/depth, PEQ gain, comp threshold/gain, faders, sends, AMM weight).
 Frequencies (HPF, PEQ): logarithmic, Hz = 82.5·10^((raw − 0x4E9B)/15316) (HPF 151 Hz = 0x5E56, 277 Hz = 0x6E12).
-Pan: 0x00 (L) … 0x25 (centre) … 0x4A (R). Times (attack, hold, release): logarithmic u16. Ratio, PEQ width: index.
+Pan: 0x00 (L) … 0x25 (centre) … 0x4A (R). Times, ratio and PEQ width: see "Calibrated scales" below (8.11.2026).
 
 ### Inputs
 | function | message |
@@ -133,3 +133,20 @@ Not toured yet (real gaps, decoded from the dump layout only where noted):
 - **Krishna Das through the desk:** octave shares 31…16k = −29.0 −13.8 −6.6 −7.5 −6.4 −6.3 −11.8 −15.7 −21.4 −30.8
   (the FFT measure of the same files differs by up to 20 dB at the ends: always compare in the desk's own units).
 - **USB stick limitation:** REC to the stick is ignored while the SD player plays (no `F7 12 12 0D 54` answer, no take). With the SD stopped it records (`54` on REC, `50` on STOP). To print an SD playback, record the desk's USB audio on a computer.
+
+## Calibrated scales (8.11.2026, night) — supersedes "Times: logarithmic", "Ratio, PEQ width: index" and the two-point Hz formula
+Method: cq_mitm.py's injector takes `c <hex>` = send the message to CQ MixPad only, as if the desk reported a change.
+MixPad shows the value; the desk is never touched (the state dump diff before/after: zero differences). MixPad ran in the
+Mantra Sandbox (headless Android emulator, github.com/markoboskoauroville/MANTRA_SANDBOX), never on the Mac's screen.
+
+| scale | formula / table | points read |
+|---|---|---|
+| Frequency (PEQ, HPF) | **Hz = 4 · 2^(raw/4608)** (18·256 per octave); raw = 4608·log2(Hz/4) | 15 points 20 Hz…20.1 kHz, error < 0.2 % |
+| Times (gate attack/release/hold, comp attack/release) | **µs = 2^(raw/1793.44)**; raw 0 shows 0.00 µs | 15 points 1 µs…99923 s |
+| Comp ratio (10/0F, index) | 0 1 · 1 1.03 · 2 1.05 · 3 1.07 · 4 1.1 · 5 1.15 · 6 1.2 · 7 1.25 · 8 1.3 · 9 1.35 · 10 1.4 · 11 1.5 · 12 1.6 · 13 1.7 · 14 1.8 · 15 1.9 · 16 2 · 17 2.3 · 18 2.5 · 19 2.7 · 20 3 · 21 3.3 · 22 3.5 · 23 3.7 · 24 4 · 25 4.3 · 26 4.5 · 27 4.7 · 28 5 · 29 5.3 · 30 5.5 · 31 5.7 · 32 6 · 33 7 · 34 8 · 35 10 · 36 12 · 37 16 · 38 20 · 39 40 · 40 Infinity (:1) | all 41 |
+| PEQ width (0F/0E, index, octaves) | 0 Shelf · 1 1.5 · 2 1.4 · 3 1.3 · 4 1.2 · 5 1.1 · 6 1 · 7 0.95 · 8 0.9 · 9 0.85 · 10 0.8 · 11 3/4 · 12 0.7 · 13 2/3 · 14 0.6 · 15 0.55 · 16 0.5 · 17 0.45 · 18 0.4 · 19 1/3 · 20 0.3 · 21 1/4 · 22 0.2 · 23 1/6 · 24 0.13 · 25 1/9 | all 26 |
+| Gate threshold/depth, comp threshold/gain | dB = (raw − 0x8000)/256, raw 0 shows Off | 8 points |
+
+Dump offsets per input k (stride 280, checked on all ten inputs): gate attack 488, release 490, hold 492, threshold 494,
+depth 496 · PEQ band b gain 520+6b, freq 522+6b, width 524+6b · comp attack 572, release 574, threshold 576, gain 578,
+ratio 580 (low byte). A shelf/filter band keeps another number in its width word (1808, 2840 seen).
