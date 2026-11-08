@@ -42,7 +42,9 @@
     "Main_LR": "38",
     "FX1_return": "3A",
     "FX2_return": "3B",
-    "FX1_to_LR": "20"
+    "FX1_to_LR": "20",
+    "USB": "1C",
+    "BT": "1E"
   },
   "scales": {
     "db": {
@@ -337,6 +339,10 @@
         "red": 1
       },
       "verified": true
+    },
+    "stereo_inputs": {
+      "what": "ST IN (18), USB (1C), BT (1E) use the input blocks: gate 0D, PEQ 0F, comp 10",
+      "verified": "USB PEQ gain shown on MixPad by injection (F7 0F 0F 0C 1C ...; block 28 is ignored for it), 8.11.2026"
     }
   },
   "mix": {
@@ -407,6 +413,32 @@
     "delay": {
       "bytes": "F7 1E 1E 0D <out> 00 <u16>",
       "verified": true
+    },
+    "peq": {
+      "bytes": "F7 28 28 PP CH band <value>",
+      "PP": {
+        "0C": "gain dB",
+        "0D": "freq (Hz = 4*2^(raw/4608))",
+        "0E": "width index",
+        "0F": "type (as inputs, assumed)",
+        "10": "in (assumed)"
+      },
+      "CH": "Out1-6 = 30-35, Main LR = 38",
+      "verified": "Main LR LF gain moved in MixPad (F7 28 28 0C 38 00 ...); freq, width, gain shown on MixPad for CH 38 and 30 by injection, 8.11.2026"
+    },
+    "comp": {
+      "bytes": "F7 10 10 PP CH 00 <value> (same block and params as the input compressor)",
+      "CH": "Out1-6 30-35, Main LR 38",
+      "verified": "Main LR threshold moved in MixPad: F7 10 10 0E 38 00 ..., 8.11.2026"
+    },
+    "limiter": {
+      "bytes": "F7 29 29 PP CH 00 <value>",
+      "PP": {
+        "0C": "in 0/1",
+        "0D": "threshold dB",
+        "0E": "speed 0 fast / 1 slow"
+      },
+      "verified": "threshold moved in MixPad; in and speed shown on MixPad by injection, 8.11.2026"
     }
   },
   "fx": {
@@ -552,20 +584,30 @@
       "usb_out_patch": "38440 (4 bytes per slot: source u16, side, flag)",
       "fx1_param_p": "40278+2p",
       "fx2_param_p": "40448+2p",
-      "verified": true
+      "verified": true,
+      "per_channel_slot": "the 280-byte blocks are indexed by CH number, not only Ip1-10: slot k = CH (ST IN 24, USB 28, BT 30, Out1 48 ... Main LR 56); same layout: PEQ 520+280k, comp 572+280k, limiter threshold 612+280k (Main)",
+      "main_lr": {
+        "peq_gain_band_b": "16200+6b",
+        "peq_freq_band_b": "16202+6b",
+        "comp_attack": "16252",
+        "comp_release": "16254",
+        "comp_threshold": "16256",
+        "comp_gain": "16258",
+        "comp_ratio_low_byte": "16260",
+        "limiter_threshold": "16292"
+      }
     }
   },
   "not_decoded": [
-    "Main LR PEQ bands and compressor",
-    "Out1-6 PEQ bands and GEQ",
-    "ST IN / USB / Bluetooth processing",
+    "Out1-6 GEQ (PEQ decoded 8.11.2026)",
     "FX inner PEQ and INPUTS/OUTPUTS tabs",
     "Gain Assistant Auto Set",
     "input Library",
     "custom layers",
     "soft keys",
     "footswitch",
-    "type 9 and 24 meter layout"
+    "type 9 and 24 meter layout",
+    "FBA (feedback assistant) on outputs"
   ],
   "left_out_on_purpose": [
     "+48 V",
