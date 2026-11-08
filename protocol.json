@@ -1,80 +1,435 @@
 {
   "_about": "Machine-readable map of the Allen & Heath CQ-12T private protocol (CQ-18T and CQ-20B use the same family, untested). Decoded 8.11.2026 on a CQ-12T by man-in-the-middle with CQ MixPad. Only entries marked verified were seen on the wire AND read back from the desk's connect dump. Full text: PROTOCOL.md.",
   "transport": {
-    "discovery": {"udp": 51320, "request": "CQ Find", "answer": "desk name, NUL-terminated"},
-    "control": {"tcp": 51326, "one_client_at_a_time": true, "handshake": "7F 00 02 00 00 00 <our UDP port LE>", "heartbeat": "same frame every 2 s", "version": "7F 01", "start_stream": "7F 0C 02 00 02 00"},
-    "stream": {"udp_desk_port": 51324, "keepalive": "7F 05 every 2.5 s", "meters_per_s": 25},
-    "midi": {"tcp": 51325, "doc": "Allen & Heath CQ MIDI protocol PDF (faders, sends, pans, mutes, scenes, soft keys)"}
+    "discovery": {
+      "udp": 51320,
+      "request": "CQ Find",
+      "answer": "desk name, NUL-terminated"
+    },
+    "control": {
+      "tcp": 51326,
+      "one_client_at_a_time": true,
+      "handshake": "7F 00 02 00 00 00 <our UDP port LE>",
+      "heartbeat": "same frame every 2 s",
+      "version": "7F 01",
+      "start_stream": "7F 0C 02 00 02 00"
+    },
+    "stream": {
+      "udp_desk_port": 51324,
+      "keepalive": "7F 05 every 2.5 s",
+      "meters_per_s": 25
+    },
+    "midi": {
+      "tcp": 51325,
+      "doc": "Allen & Heath CQ MIDI protocol PDF (faders, sends, pans, mutes, scenes, soft keys)"
+    }
   },
   "message": {
     "form": "F7 BB BB PP CH SS VL VH",
-    "fields": {"BB": "block, written twice", "PP": "parameter", "CH": "channel", "SS": "sub-index (band, destination, FX parameter)", "V": "u16 little endian"},
+    "fields": {
+      "BB": "block, written twice",
+      "PP": "parameter",
+      "CH": "channel",
+      "SS": "sub-index (band, destination, FX parameter)",
+      "V": "u16 little endian"
+    },
     "long_form": "7F 07 <u32 LE length> BB BB PP CH SS ...  (names, colours)"
   },
-  "channels": {"Ip1-Ip10": "00-09", "ST_IN": "18", "Out1-Out6": "30-35", "Main_LR": "38", "FX1_return": "3A", "FX2_return": "3B", "FX1_to_LR": "20"},
+  "channels": {
+    "Ip1-Ip10": "00-09",
+    "ST_IN": "18",
+    "Out1-Out6": "30-35",
+    "Main_LR": "38",
+    "FX1_return": "3A",
+    "FX2_return": "3B",
+    "FX1_to_LR": "20"
+  },
   "scales": {
-    "db": {"formula": "dB = (raw - 0x8000) / 256", "used_by": ["trim", "analogue gain", "PEQ gain", "faders", "sends", "AMM weight", "headphone level (own offset, unverified)"]},
-    "freq_hz": {"formula": "Hz = 82.5 * 10^((raw - 0x4E9B) / 15316)", "status": "two points only (82.5 Hz = 0x4E9B, 277 Hz = 0x6E12); needs calibration"},
-    "pan": {"range": "0x00 left, 0x25 centre, 0x4A right"},
+    "db": {
+      "formula": "dB = (raw - 0x8000) / 256",
+      "used_by": [
+        "trim",
+        "analogue gain",
+        "PEQ gain",
+        "faders",
+        "sends",
+        "AMM weight",
+        "headphone level (own offset, unverified)"
+      ]
+    },
+    "freq_hz": {
+      "formula": "Hz = 82.5 * 10^((raw - 0x4E9B) / 15316)",
+      "status": "two points only (82.5 Hz = 0x4E9B, 277 Hz = 0x6E12); needs calibration"
+    },
+    "pan": {
+      "range": "0x00 left, 0x25 centre, 0x4A right"
+    },
     "times": "logarithmic u16, not calibrated",
-    "ratio_and_width": "index, not calibrated"
+    "ratio_and_width": "index, not calibrated",
+    "krishna_das_target": {
+      "what": "two Krishna Das references played into the CQ's USB channel and read on Main LR's own RTA, octave share of the whole (dB) 31..16k",
+      "values": [
+        -29.0,
+        -13.8,
+        -6.6,
+        -7.5,
+        -6.4,
+        -6.3,
+        -11.8,
+        -15.7,
+        -21.4,
+        -30.8
+      ]
+    }
   },
   "inputs": {
-    "source":        {"block": "09", "param": "0D", "bytes": "F7 09 09 0D CH 01|02 00 17", "values": {"01": "analogue", "02": "SD/USB"}, "verified": true},
-    "analogue_gain": {"block": "0A", "param": "0C", "bytes": "F7 0A 0A 0C CH 01 <dB>", "verified": true},
-    "trim":          {"block": "0A", "param": "0F", "bytes": "F7 0A 0A 0F CH 00 <dB>", "verified": true},
-    "polarity":      {"block": "0A", "param": "10", "bytes": "F7 0A 0A 10 CH 00 01|00 00", "verified": true},
-    "hpf_in":        {"block": "0C", "param": "0C", "bytes": "F7 0C 0C 0C CH 00 01|00 00", "verified": true},
-    "hpf_freq":      {"block": "0C", "param": "0D", "bytes": "F7 0C 0C 0D CH 00 <freq>", "verified": true},
-    "gate":          {"block": "0D", "params": {"in": "0C", "threshold": "0E", "depth": "0F", "attack": "10", "release": "11", "hold": "12"}, "verified": true},
-    "peq":           {"block": "0F", "params": {"gain": "0C", "freq": "0D", "width": "0E", "type": "0F", "in": "10"}, "sub": "band 0 LF, 1 LM, 2 HM, 3 HF", "types": {"00": "bell", "06": "LF shelf", "0B": "LF filter", "07": "HF shelf", "0A": "HF filter"}, "verified": true},
-    "comp":          {"block": "10", "params": {"in": "0C", "rms_peak": "0D", "threshold": "0E", "ratio": "0F", "gain": "10", "attack": "11", "release": "12", "knee": "13"}, "verified": true},
-    "autogain_on":   {"block": "33", "bytes": "F7 33 33 0C CH 00 01|00 00", "verified": true},
-    "stereo_link":   {"bytes": "F7 01 01 0D 01|00 F0 00 00", "warning": "copies the odd channel onto the even one; unlinking does not undo it", "verified": true},
-    "name":          {"bytes": "7F 07 0E 00 00 00 23 23 0C 00 CH 00 00 <ASCII, NUL>", "verified": true},
-    "colour":        {"bytes": "7F 07 0F 00 00 00 23 23 0D 00 CH 00 00 <u32> <u32>", "values": {"grey": 0, "red": 1}, "verified": true}
+    "source": {
+      "block": "09",
+      "param": "0D",
+      "bytes": "F7 09 09 0D CH 01|02 00 17",
+      "values": {
+        "01": "analogue",
+        "02": "SD/USB"
+      },
+      "verified": true
+    },
+    "analogue_gain": {
+      "block": "0A",
+      "param": "0C",
+      "bytes": "F7 0A 0A 0C CH 01 <dB>",
+      "verified": true
+    },
+    "trim": {
+      "block": "0A",
+      "param": "0F",
+      "bytes": "F7 0A 0A 0F CH 00 <dB>",
+      "verified": true
+    },
+    "polarity": {
+      "block": "0A",
+      "param": "10",
+      "bytes": "F7 0A 0A 10 CH 00 01|00 00",
+      "verified": true
+    },
+    "hpf_in": {
+      "block": "0C",
+      "param": "0C",
+      "bytes": "F7 0C 0C 0C CH 00 01|00 00",
+      "verified": true
+    },
+    "hpf_freq": {
+      "block": "0C",
+      "param": "0D",
+      "bytes": "F7 0C 0C 0D CH 00 <freq>",
+      "verified": true
+    },
+    "gate": {
+      "block": "0D",
+      "params": {
+        "in": "0C",
+        "threshold": "0E",
+        "depth": "0F",
+        "attack": "10",
+        "release": "11",
+        "hold": "12"
+      },
+      "verified": true
+    },
+    "peq": {
+      "block": "0F",
+      "params": {
+        "gain": "0C",
+        "freq": "0D",
+        "width": "0E",
+        "type": "0F",
+        "in": "10"
+      },
+      "sub": "band 0 LF, 1 LM, 2 HM, 3 HF",
+      "types": {
+        "00": "bell",
+        "06": "LF shelf",
+        "0B": "LF filter",
+        "07": "HF shelf",
+        "0A": "HF filter"
+      },
+      "verified": true
+    },
+    "comp": {
+      "block": "10",
+      "params": {
+        "in": "0C",
+        "rms_peak": "0D",
+        "threshold": "0E",
+        "ratio": "0F",
+        "gain": "10",
+        "attack": "11",
+        "release": "12",
+        "knee": "13"
+      },
+      "verified": true
+    },
+    "autogain_on": {
+      "block": "33",
+      "bytes": "F7 33 33 0C CH 00 01|00 00",
+      "verified": true
+    },
+    "stereo_link": {
+      "bytes": "F7 01 01 0D 01|00 F0 00 00",
+      "warning": "copies the odd channel onto the even one; unlinking does not undo it",
+      "verified": true
+    },
+    "name": {
+      "bytes": "7F 07 0E 00 00 00 23 23 0C 00 CH 00 00 <ASCII, NUL>",
+      "verified": true
+    },
+    "colour": {
+      "bytes": "7F 07 0F 00 00 00 23 23 0D 00 CH 00 00 <u32> <u32>",
+      "values": {
+        "grey": 0,
+        "red": 1
+      },
+      "verified": true
+    }
   },
   "mix": {
-    "level":     {"bytes": "F7 06 06 0E CH <dest> <dB>", "dest": {"Out1-Out6": "08-0D", "Main_LR": "10", "FX1": "12", "FX2": "13"}, "verified": true},
-    "pan":       {"bytes": "F7 06 06 10 CH 10 <pan>", "verified": true},
-    "mute":      {"bytes": "F7 06 06 0C CH 00 01|00 00", "verified": true},
-    "mute_group":{"bytes": "F7 06 06 1B CH <group-1> 01|00 00", "verified": true},
-    "dca":       {"bytes": "F7 06 06 1D CH <dca-1> 01|00 00", "verified": true},
-    "output_sends_pre_post": {"bytes": "F7 06 06 20 00 <dest> 01|00 00", "verified": true},
-    "output_source_point":   {"bytes": "F7 06 06 12 <out> 00 00|01 00", "values": {"0": "post EQ", "1": "post comp"}, "verified": true},
-    "usb_source_point":      {"bytes": "F7 06 06 13 <point> 00 00 00", "values": {"0": "post preamp", "4": "post EQ"}, "verified": true},
-    "pafl":      {"bytes": "F7 17 17 0C CH 00 ...", "verified": true},
-    "headphone_level": {"bytes": "F7 17 17 24 00 00 <u16>", "verified": true}
+    "level": {
+      "bytes": "F7 06 06 0E CH <dest> <dB>",
+      "dest": {
+        "Out1-Out6": "08-0D",
+        "Main_LR": "10",
+        "FX1": "12",
+        "FX2": "13"
+      },
+      "verified": true
+    },
+    "pan": {
+      "bytes": "F7 06 06 10 CH 10 <pan>",
+      "verified": true
+    },
+    "mute": {
+      "bytes": "F7 06 06 0C CH 00 01|00 00",
+      "verified": true
+    },
+    "mute_group": {
+      "bytes": "F7 06 06 1B CH <group-1> 01|00 00",
+      "verified": true
+    },
+    "dca": {
+      "bytes": "F7 06 06 1D CH <dca-1> 01|00 00",
+      "verified": true
+    },
+    "output_sends_pre_post": {
+      "bytes": "F7 06 06 20 00 <dest> 01|00 00",
+      "verified": true
+    },
+    "output_source_point": {
+      "bytes": "F7 06 06 12 <out> 00 00|01 00",
+      "values": {
+        "0": "post EQ",
+        "1": "post comp"
+      },
+      "verified": true
+    },
+    "usb_source_point": {
+      "bytes": "F7 06 06 13 <point> 00 00 00",
+      "values": {
+        "0": "post preamp",
+        "4": "post EQ"
+      },
+      "verified": true
+    },
+    "pafl": {
+      "bytes": "F7 17 17 0C CH 00 ...",
+      "verified": true
+    },
+    "headphone_level": {
+      "bytes": "F7 17 17 24 00 00 <u16>",
+      "verified": true
+    }
   },
   "outputs": {
-    "eq_type": {"bytes": "F7 00 04 0C <out> 01 01|00 00", "values": {"1": "PEQ", "0": "GEQ"}, "verified": true},
-    "delay":   {"bytes": "F7 1E 1E 0D <out> 00 <u16>", "verified": true}
+    "eq_type": {
+      "bytes": "F7 00 04 0C <out> 01 01|00 00",
+      "values": {
+        "1": "PEQ",
+        "0": "GEQ"
+      },
+      "verified": true
+    },
+    "delay": {
+      "bytes": "F7 1E 1E 0D <out> 00 <u16>",
+      "verified": true
+    }
   },
   "fx": {
-    "type":   {"bytes": "F7 20 20 0C <fx 0|1> 09 <type> 00", "easyverb_types": ["Vocal Classic", "Vocal Echo", "Vocal Intimate", "String Slap", "Percussion", "Drum Room", "String", "Brass", "Woodwind", "Piano"], "verified": true},
-    "param":  {"bytes": "F7 20 20 0C <fx> <param> <value>", "fx1_easyverb": {"size": "08"}, "fx2_echoverb": {"reverb_size": "08", "delay_time": "09", "delay_level": "0A", "echo_level": "0B", "reverb_colour": "0C", "echo_time": "0E/0F"}, "verified": true},
-    "trails": {"bytes": "F7 20 20 0E <fx> 00 01|00 00", "verified": true},
-    "assist": {"bytes": "F7 20 20 10 <fx> 00 <id> 00", "ids": {"soften": "13", "whisper": "08", "clarity": "0A", "level": "01", "off": "00"}, "verified": true}
+    "type": {
+      "bytes": "F7 20 20 0C <fx 0|1> 09 <type> 00",
+      "easyverb_types": [
+        "Vocal Classic",
+        "Vocal Echo",
+        "Vocal Intimate",
+        "String Slap",
+        "Percussion",
+        "Drum Room",
+        "String",
+        "Brass",
+        "Woodwind",
+        "Piano"
+      ],
+      "verified": true
+    },
+    "param": {
+      "bytes": "F7 20 20 0C <fx> <param> <value>",
+      "fx1_easyverb": {
+        "size": "08"
+      },
+      "fx2_echoverb": {
+        "reverb_size": "08",
+        "delay_time": "09",
+        "delay_level": "0A",
+        "echo_level": "0B",
+        "reverb_colour": "0C",
+        "echo_time": "0E/0F"
+      },
+      "verified": true
+    },
+    "trails": {
+      "bytes": "F7 20 20 0E <fx> 00 01|00 00",
+      "verified": true
+    },
+    "assist": {
+      "bytes": "F7 20 20 10 <fx> 00 <id> 00",
+      "ids": {
+        "soften": "13",
+        "whisper": "08",
+        "clarity": "0A",
+        "level": "01",
+        "off": "00"
+      },
+      "verified": true
+    }
   },
-  "amm": {"in": "F7 2A 2A 0C 00 00 01|00 00", "follow_fader": "F7 2A 2A 12 <0|1> 00 00 00", "channel_on": "F7 2A 2A 0E CH 00 01|00 00", "weight": "F7 2A 2A 0F CH 00 <dB>", "verified": true},
+  "amm": {
+    "in": "F7 2A 2A 0C 00 00 01|00 00",
+    "follow_fader": "F7 2A 2A 12 <0|1> 00 00 00",
+    "channel_on": "F7 2A 2A 0E CH 00 01|00 00",
+    "weight": "F7 2A 2A 0F CH 00 <dB>",
+    "verified": true
+  },
   "usb": {
-    "stream_mode": {"multitrack": "F7 11 11 13 00 00 00 00", "stereo": "F7 11 11 13 01 00 00 00", "verified": true},
-    "out_patch":   {"bytes": "F7 09 09 0D <source> <07 L|08 R> <slot> 14", "slot_0x10": "USB 11", "verified": true}
+    "stream_mode": {
+      "multitrack": "F7 11 11 13 00 00 00 00",
+      "stereo": "F7 11 11 13 01 00 00 00",
+      "verified": true
+    },
+    "out_patch": {
+      "bytes": "F7 09 09 0D <source> <07 L|08 R> <slot> 14",
+      "slot_0x10": "USB 11",
+      "verified": true
+    }
   },
   "sd": {
-    "transport": {"bytes": "F7 11 11 10 <op> FF 00 00 00", "ops": {"00": "previous", "01": "stop", "02": "play/pause", "04": "next"}, "verified": true},
-    "record":    "F7 11 11 11 03 FF 00 00 00",
+    "transport": {
+      "bytes": "F7 11 11 10 <op> FF 00 00 00",
+      "ops": {
+        "00": "previous",
+        "01": "stop",
+        "02": "play/pause",
+        "04": "next",
+        "06": "seek: F7 11 11 10 06 <u32 LE milliseconds> (verified: 0x2B1696 -> 47:04)"
+      },
+      "verified": true
+    },
+    "record": "F7 11 11 11 03 FF 00 00 00",
     "stop_record": "F7 11 11 10 01 FF 00 00 00 + F7 11 11 11 01 FF 00 00 00",
-    "arm_mask":  {"bytes": "F7 11 11 14 <u32 LE mask>", "bit0": "track 1", "verified": true},
-    "status":    "7F 07 ... (55 bytes, 11 12 1C): byte 7 = 0x40 recording; u32 at 20 * 1.98 = seconds left on the card"
+    "arm_mask": {
+      "bytes": "F7 11 11 14 <u32 LE mask>",
+      "bit0": "track 1",
+      "verified": true
+    },
+    "status": "7F 07 ... (55 bytes, 11 12 1C): byte 7 = 0x40 recording; u32 at 20 * 1.98 = seconds left on the card"
   },
   "meters_udp": {
-    "type_8":  {"bytes": 646, "inputs": "10 words per input from word 3 (Ip n = words 3+10(n-1)...)", "status": "partly mapped"},
-    "type_9":  {"bytes": 814, "outputs_main_fx": "words 51-66, 299-302, 321-322, 359-372, 388-390", "status": "not split"},
-    "type_23": {"bytes": 760, "rta": "words 312..342 u16 LE = 31 third-octave bands 20 Hz-20 kHz, dB = (raw - 0x8000)/256, floor -110", "rta_on": "F7 2F 2F 0F 00 38 01 00", "verified": true},
-    "type_24": {"status": "not identified"}
+    "type_8": {
+      "bytes": 646,
+      "layout": "20 bytes per input, level u16 LE at +14 of each block (data starts after the 6-byte header)",
+      "scale": "dB = (raw-0x8000)/256, 0 = nominal about -18 dBFS, clip near +18, -110 = silent",
+      "verified": true
+    },
+    "type_9": {
+      "bytes": 814,
+      "layout": "16 bytes per output, level at +14; 0..5 = Out1..6, 6/7 = Main L/R",
+      "verified": true,
+      "credit": "layout first published by Jon Skeet's DigiMixer (CqSeries)"
+    },
+    "type_23": {
+      "bytes": 760,
+      "rta": "words 312..342 u16 LE = 31 third-octave bands 20 Hz-20 kHz, dB = (raw - 0x8000)/256, floor -110",
+      "rta_on": "F7 2F 2F 0F 00 38 01 00",
+      "verified": true
+    },
+    "type_24": {
+      "status": "not identified"
+    }
   },
-  "connect_dump": {"header": "7F 04 <u32 LE length>", "size_cq12t": 42824, "note": "the desk never echoes a change to its sender; read the true state here"},
-  "not_decoded": ["Main LR PEQ bands and compressor", "Out1-6 PEQ bands and GEQ", "Ip2-Ip10 processing (same stride as Ip1, untested)", "ST IN / USB / Bluetooth processing", "FX inner PEQ and INPUTS/OUTPUTS tabs", "Gain Assistant Auto Set", "input Library", "custom layers", "soft keys", "footswitch", "type 9 and 24 meter layout"],
-  "left_out_on_purpose": ["+48 V", "sample rate", "scene store/recall", "Library recall", "network settings"]
+  "connect_dump": {
+    "header": "7F 04 <u32 LE length>",
+    "size_cq12t": 42824,
+    "note": "the desk never echoes a change to its sender; read the true state here",
+    "offsets": {
+      "per_input_k_stride_280": {
+        "name_ascii": "384+280k",
+        "hpf_freq": "484+280k",
+        "hpf_in_low_byte": "486+280k",
+        "gate_release": "490+280k",
+        "peq_gain_band_b": "520+280k+6b",
+        "peq_freq_band_b": "522+280k+6b",
+        "peq_width_band_b": "524+280k+6b",
+        "trim": "656+280k"
+      },
+      "analogue_gain": "31248+4k",
+      "main_fader": "19916+168k (0x0000 = off)",
+      "main_pan": "19918+168k",
+      "fx1_send": "19928+168k",
+      "usb_out_patch": "38440 (4 bytes per slot: source u16, side, flag)",
+      "fx1_param_p": "40278+2p",
+      "fx2_param_p": "40448+2p",
+      "verified": true
+    }
+  },
+  "not_decoded": [
+    "Main LR PEQ bands and compressor",
+    "Out1-6 PEQ bands and GEQ",
+    "Ip2-Ip10 processing (same stride as Ip1, untested)",
+    "ST IN / USB / Bluetooth processing",
+    "FX inner PEQ and INPUTS/OUTPUTS tabs",
+    "Gain Assistant Auto Set",
+    "input Library",
+    "custom layers",
+    "soft keys",
+    "footswitch",
+    "type 9 and 24 meter layout"
+  ],
+  "left_out_on_purpose": [
+    "+48 V",
+    "sample rate",
+    "scene store/recall",
+    "Library recall",
+    "network settings"
+  ],
+  "usb_stick": {
+    "record": "F7 11 11 0F 03 FF 00 00 00",
+    "stop": "F7 11 11 0F 01 FF 00 00 00",
+    "takes": "CQ-ST001 ... on the stick (stereo Main LR)",
+    "verified": true
+  },
+  "rta_source": {
+    "bytes": "F7 2F 2F 0F 00 <CH> 01 00",
+    "CH": {
+      "38": "Main LR",
+      "00-09": "Ip1..Ip10 (each shows its own spectrum)"
+    },
+    "note": "0x0A-0x1E carry no RTA",
+    "verified": true
+  }
 }

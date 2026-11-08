@@ -120,3 +120,15 @@ Not toured yet (real gaps, decoded from the dump layout only where noted):
 - Gain Assistant "Auto Set" button, Input Library, custom layers (only the page was seen), soft keys, footswitch
   tip/ring assignments, Mute Groups for every input (one input and one group only), DCAs for every input.
 - Meters: type 8 (inputs) mapped partly, type 9 (outputs, Main, FX) not split, type 24 not identified.
+
+## Added 8.11.2026 evening (the RTA mix session)
+- **USB stick stereo recorder:** REC `F7 11 11 0F 03 FF 00 00 00`, STOP `F7 11 11 0F 01 FF 00 00 00` (takes CQ-ST…).
+- **SD seek:** `F7 11 11 10 06 <u32 LE ms>`.
+- **RTA source:** `F7 2F 2F 0F 00 <CH> 01 00`: CH 0x38 Main LR, 0..9 = that input's own spectrum.
+- **Meters:** type 8 = 20 bytes per input, level at +14; type 9 = 16 bytes per output, level at +14, 6/7 = Main L/R
+  (layout as in Jon Skeet's DigiMixer). Scale 0 = nominal (about −18 dBFS), clip near +18.
+- **State dump offsets** (input k, Ip1 = 0): name 384+280k · HPF freq 484+280k · HPF in 486+280k · PEQ gain
+  520+280k+6·band · trim 656+280k · analogue gain 31248+4k · Main fader 19916+168k (0 = off) · pan 19918+168k.
+  Found by changing one value and diffing the dump; every value put back (zero differences).
+- **Krishna Das through the desk:** octave shares 31…16k = −29.0 −13.8 −6.6 −7.5 −6.4 −6.3 −11.8 −15.7 −21.4 −30.8
+  (the FFT measure of the same files differs by up to 20 dB at the ends: always compare in the desk's own units).
