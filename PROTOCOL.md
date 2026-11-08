@@ -132,3 +132,4 @@ Not toured yet (real gaps, decoded from the dump layout only where noted):
   Found by changing one value and diffing the dump; every value put back (zero differences).
 - **Krishna Das through the desk:** octave shares 31…16k = −29.0 −13.8 −6.6 −7.5 −6.4 −6.3 −11.8 −15.7 −21.4 −30.8
   (the FFT measure of the same files differs by up to 20 dB at the ends: always compare in the desk's own units).
+- **USB stick limitation:** REC to the stick is ignored while the SD player plays (no `F7 12 12 0D 54` answer, no take). With the SD stopped it records (`54` on REC, `50` on STOP). To print an SD playback, record the desk's USB audio on a computer.

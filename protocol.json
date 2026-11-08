@@ -421,7 +421,8 @@
     "record": "F7 11 11 0F 03 FF 00 00 00",
     "stop": "F7 11 11 0F 01 FF 00 00 00",
     "takes": "CQ-ST001 ... on the stick (stereo Main LR)",
-    "verified": true
+    "verified": true,
+    "limitation": "REC is ignored while the SD player plays (tested 8.11.2026: no state code F7 12 12 0D 54 comes back, no take is created); with the SD stopped it records (code 54 on REC, 50 on STOP). So an SD playback cannot be printed to the stick; print the Main LR over USB audio to a computer instead."
   },
   "rta_source": {
     "bytes": "F7 2F 2F 0F 00 <CH> 01 00",
